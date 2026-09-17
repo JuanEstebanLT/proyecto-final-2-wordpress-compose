@@ -1,0 +1,56 @@
+services:
+  # ======================================================
+  # SERVICIO DE BASE DE DATOS
+  # ======================================================
+  # Este servicio crea el contenedor MySQL que almacenará
+  # la información utilizada posteriormente por WordPress.
+  db:
+    image: mysql:8.0
+    container_name: wordpress-db
+    restart: unless-stopped
+
+    # Las credenciales se leen desde el archivo .env para
+    # evitar escribir contraseñas directamente en este archivo.
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+    # El volumen conserva los datos de MySQL aunque el
+    # contenedor sea eliminado y creado nuevamente.
+    volumes:
+      - wordpress_db_data:/var/lib/mysql
+
+    # El healthcheck comprueba periódicamente que MySQL esté
+    # disponible y responda dentro del contenedor.
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    # La red permite la comunicación interna con otros
+    # servicios que se agregarán en fases posteriores.
+    networks:
+      - wordpress_network
+
+# ======================================================
+# VOLUMEN PERSISTENTE
+# ======================================================
+volumes:
+  wordpress_db_data:
+
+# ======================================================
+# RED PERSONALIZADA
+# ======================================================
+# Se utiliza una red bridge para la comunicación interna
+# entre los servicios del proyecto.
+networks:
+  wordpress_network:
+    driver: bridge
