@@ -1,0 +1,8 @@
+# Variables de entorno locales
+# El archivo .env contiene datos locales y contraseñas de desarrollo,
+# por lo tanto, no debe subirse al repositorio.
+.env
+
+# Archivos temporales del sistema
+.DS_Store
+Thumbs.db
