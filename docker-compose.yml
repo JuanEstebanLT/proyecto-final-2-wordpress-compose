@@ -35,16 +35,54 @@ services:
       retries: 5
       start_period: 20s
 
-    # La red permite la comunicación interna con otros
-    # servicios que se agregarán en fases posteriores.
+    # La red permite la comunicación interna entre MySQL
+    # y el servicio WordPress.
+    networks:
+      - wordpress_network
+
+  # ======================================================
+  # SERVICIO WORDPRESS
+  # ======================================================
+  # Este servicio ejecuta WordPress con el servidor Apache
+  # incluido en la imagen oficial.
+  wordpress:
+    image: wordpress:6.8.2-php8.3-apache
+    container_name: wordpress-app
+    restart: unless-stopped
+
+    # El puerto definido en .env se publica en el puerto 80
+    # del contenedor para acceder a WordPress desde Windows.
+    ports:
+      - "${WORDPRESS_PORT}:80"
+
+    # WordPress utiliza el nombre del servicio db para
+    # conectarse a MySQL mediante la red interna.
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+
+    # WordPress espera hasta que el healthcheck de MySQL
+    # indique que la base de datos está disponible.
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # Este volumen conserva los archivos de WordPress aunque
+    # el contenedor sea eliminado y creado nuevamente.
+    volumes:
+      - wordpress_data:/var/www/html
+
     networks:
       - wordpress_network
 
 # ======================================================
-# VOLUMEN PERSISTENTE
+# VOLÚMENES PERSISTENTES
 # ======================================================
 volumes:
   wordpress_db_data:
+  wordpress_data:
 
 # ======================================================
 # RED PERSONALIZADA
